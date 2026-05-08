@@ -1,0 +1,637 @@
+here<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الكيمياء العملية - اختبار تجريبي</title>
+    <style>
+        :root {
+            --glass: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --primary: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --text: #1f2937;
+            --radius: 12px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body {
+            min-height: 100vh;
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            transition: background-image 0.3s ease;
+            color: var(--text);
+            padding-bottom: 50px;
+            background-color: #0f172a;
+        }
+        /* Responsive Backgrounds */
+        @media (max-width: 767px) { 
+            body { background-image: url('W1.jpg'); } 
+        }
+        @media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) { 
+            body { background-image: url('W2.jpg'); } 
+        }
+        @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) { 
+            body { background-image: url('W3.jpg'); } 
+        }
+        @media (min-width: 1025px) { 
+            body { background-image: url('W1.jpg'); } 
+        }
+
+        #particles-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; pointer-events: none;
+        }
+
+        .glass {
+            background: var(--glass);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            box-shadow: 0 4px 30px rgba(0,0,0,0.1);
+        }
+
+        #app { position: relative; z-index: 10; max-width: 800px; margin: 0 auto; padding: 1rem; }
+        .hidden { display: none !important; }
+        .ai-hidden { display: none !important; }
+
+        #home-view { padding: 2rem; text-align: center; margin-top: 2rem; }
+        h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .subtitle { font-size: 1rem; color: #f0f0f0; margin-bottom: 2rem; font-weight: 500; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .card-btn {
+            padding: 1.2rem; cursor: pointer; transition: all 0.2s;
+            background: rgba(255,255,255,0.7); border-radius: var(--radius); font-weight: bold;
+            display: flex; align-items: center; justify-content: center; min-height: 70px; gap: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .card-btn:hover { transform: translateY(-3px); background: rgba(255,255,255,0.95); }
+        .card-btn.mixed { background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); color: white; }
+        .q-count { font-size: 0.85em; opacity: 0.7; font-weight: normal; }
+
+        #quiz-view { background: transparent; border: none; box-shadow: none; backdrop-filter: none; }
+        .sticky-header {
+            position: sticky; top: 0; z-index: 50;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.8rem 1rem; margin-bottom: 1.5rem;
+            background: rgba(255,255,255,0.85); backdrop-filter: blur(10px);
+            border-radius: var(--radius); box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .back-btn { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--primary); padding: 0.5rem; }
+        .quiz-title { font-weight: bold; font-size: 1rem; flex-grow: 1; text-align: center; padding: 0 1rem; }
+        .score-box { padding: 0.4rem 0.8rem; border-radius: 20px; background: rgba(0,0,0,0.08); font-weight: bold; font-size: 0.9rem; white-space: nowrap; }
+
+        .q-card {
+            background: var(--card-bg); padding: 1.5rem; margin-bottom: 1.2rem;
+            border-radius: var(--radius); border: 1px solid rgba(0,0,0,0.05);
+            transition: opacity 0.3s ease;
+        }
+        .q-card.reveal-anim { animation: fadeSlideIn 0.5s ease forwards; }
+        .q-num { font-size: 0.85rem; color: #4b5563; margin-bottom: 0.5rem; font-weight: 600; text-align: right; }
+        .q-text { 
+            font-size: 1.15rem; margin-bottom: 1rem; line-height: 1.5; font-weight: 500;
+            direction: ltr !important;
+            text-align: left !important;
+        }
+        .options { display: flex; flex-direction: column; gap: 0.6rem; }
+        .opt {
+            padding: 0.9rem 1rem; cursor: pointer; border-radius: 8px;
+            background: rgba(255,255,255,0.6); border: 2px solid transparent; transition: 0.2s;
+            font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;
+            direction: ltr !important;
+            text-align: left !important;
+        }
+        .opt:hover:not(.locked) { background: rgba(255,255,255,0.9); border-color: rgba(79, 70, 229, 0.3); }
+        .opt.selected-correct { background: rgba(16, 185, 129, 0.2); border-color: var(--success); }
+        .opt.selected-wrong { background: rgba(239, 68, 68, 0.2); border-color: var(--danger); }
+        .opt.show-correct { background: rgba(16, 185, 129, 0.15); border-color: var(--success); }
+        .opt.locked { pointer-events: none; opacity: 0.85; cursor: default; }
+        .opt::before {
+            content: ''; width: 18px; height: 18px; border-radius: 50%;
+            border: 2px solid #888; display: inline-block; flex-shrink: 0;
+        }
+        .opt.selected-correct::before, .opt.show-correct::before { background: var(--success); border-color: var(--success); }
+        .opt.selected-wrong::before { background: var(--danger); border-color: var(--danger); }
+
+        .ai-divider {
+            background: linear-gradient(135deg, #f59e0b, #d97706); color: white;
+            padding: 1.5rem; border-radius: var(--radius); margin: 2rem 0;
+            text-align: center; box-shadow: 0 4px 15px rgba(217, 119, 6, 0.3);
+            animation: pulse 2s infinite;
+        }
+        .ai-divider h3 { margin-bottom: 0.5rem; font-size: 1.2rem; }
+        .ai-divider button {
+            margin-top: 0.8rem; padding: 0.6rem 1.2rem; border: none; border-radius: 20px;
+            background: white; color: #d97706; font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+        .ai-divider button:hover { transform: scale(1.05); }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #emoji-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 999; }
+        .float-emoji {
+            position: absolute; font-size: 2.5rem; animation: floatUp 1.8s ease-out forwards; opacity: 0;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(20px) scale(0.5); opacity: 0; }
+            20% { transform: translateY(0) scale(1.3); opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateY(-40px) scale(1); opacity: 0; }
+        }
+
+        #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { padding: 2rem; max-width: 400px; width: 90%; text-align: center; }
+        .modal-btns { display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: center; }
+        .action-btn { padding: 0.8rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
+        .btn-primary { background: var(--primary); }
+        .btn-danger { background: var(--danger); }
+        .btn-primary:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+    <canvas id="particles-canvas"></canvas>
+    <div id="emoji-container"></div>
+    <div id="modal-overlay" class="hidden">
+        <div class="modal-content glass">
+            <h3>📁 لديك تقدم محفوظ</h3>
+            <p style="margin: 1rem 0; line-height: 1.6;">هل تريد استكمال الاختبار من حيث توقفت أم البدء من جديد؟</p>
+            <div class="modal-btns">
+                <button class="action-btn btn-primary" onclick="loadSavedProgress()">استكمال التقدم</button>
+                <button class="action-btn btn-danger" onclick="restartApp()">إعادة من البداية</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app">
+        <div id="home-view" class="glass">
+            <h1>🧪 أسئلة الاختيار من متعدد<br>لامتحان الكيمياء العملي النهائي</h1>
+            <p class="subtitle">by: al_witify</p>
+            <div class="grid" id="lecture-grid"></div>
+        </div>
+
+        <div id="quiz-view" class="hidden">
+            <div class="sticky-header glass">
+                <button class="back-btn" onclick="goHome()" title="الرئيسية">🏠</button>
+                <span id="quiz-title" class="quiz-title"></span>
+                <div class="score-box">📊 النتيجة: <span id="score-val">0</span> / <span id="total-val">0</span></div>
+            </div>
+            <div id="questions-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // ---------- البيانات الكاملة ----------
+        const rawData = {
+            "Blood Glucose": [
+                {q:"In diabetes mellitus, glucagon levels are:", o:["elevated due to high insulin","lowered due to high conversion to glucose","lowered due to low insulin","elevated and not suppressed by carbohydrate loading"], a:3, ai:false},
+                {q:"In the diabetic patient, residual insulin secretion can be monitored by:", o:["glucose tolerance test","C-peptide levels","pancreatic polypeptide levels","insulin levels"], a:1, ai:false},
+                {q:"The determination of glucose tolerance following the oral administration of glucose is recommended as a screening test for the presence of underlying gestational diabetes mellitus. How much gram of glucose is recommended in this tolerance test?", o:["50 grams","100 grams","75 grams","120 grams"], a:1, ai:false},
+                {q:"According to the WHO criteria, patients with type I diabetes mellitus are, at the time of diagnosis, characterized by all the following except:", o:["hyperglycemia","ketoacidosis","ketonuria","normal weight"], a:3, ai:false},
+                {q:"Which of the following statements about type 1 diabetes mellitus are correct:", o:["Formerly known as insulin independent","Adult onset","Caused by autoimmune destruction of the B-cells of the pancreas","The pancreas synthesizes insulin but unable to secrete"], a:2, ai:false},
+                {q:"Which of the following confirmed values meet the diagnostic threshold for diabetes?", o:["fasting blood glucose 140 mg/dl","random glucose >160 mg/dl","2 hour post prandial glucose to 126 mg/dl","fasting blood glucose ≥126 mg/dl"], a:3, ai:false},
+                {q:"Insulin deficiency is associated with:", o:["Reduced lipolysis","Increased ketogenesis","Reduced gluconeogenesis","Reduced proteolysis"], a:1, ai:false},
+                {q:"The pathogenesis of hyperglycemia in type 2 diabetes includes all the following mechanisms except for:", o:["Increased glucose production by the liver","Impaired insulin secretion","Decreased glucose uptake from the skeletal muscle","All of the options given are correct"], a:3, ai:false},
+                {q:"Which of the following is correct of type II diabetes mellitus?", o:["Is not associated with obesity.","is mostly diagnosed in juveniles, age 9-to-14.","is mostly diagnosed in those over the age of 40y.","Has an absolute requirement for insulin replacement to preserve life."], a:2, ai:false},
+                {q:"Insulin enhances the uptake of triacylglycerols in adipose tissues. Which of the following enzyme is activated that facilitates the uptake?", o:["Hormone-sensitive lipase","Lipoprotein lipase","LCAT","cholesterol oxidase"], a:1, ai:false},
+                {q:"Hyperglycemia does not produce in:", o:["Decreased insulin secretion.","Increased carbohydrate intake.","Decreased peripheral glucose uptake.","Increased ketogenesis."], a:3, ai:false},
+                {q:"Plasma insulin concentration as almost zero, When glucose concentrations is:", o:["10 mg/dL","40 mg/dL","60 mg/dL","80 mg/dL"], a:1, ai:false},
+                {q:"The enzyme catalyzes the oxidation of glucose into gluconic acid and H2O2:", o:["glucose oxidase","glucose hexokinase","glucose dehydrogenase","mutarotase"], a:0, ai:false},
+                {q:"The healthy persons maintains the extracellular glucose concentration remarkably constant within the limits of:", o:["90-160 mg/dl","70-100 mg/dl","50-70 mg/dl","70-180 mg/dl"], a:1, ai:false},
+                {q:"Which of the following statements regarding glucose blood samples is/are correct? 1. After a period of fasting, the glucose concentration in venous blood is 5-10% lower than arterial blood. 2. deproteinization will result to glucose decrease. 3. the glucose content of erythrocytes is lower than that in plasma 4. glucose values in venous plasma are 10% lower than those in venous whole blood.", o:["only 1 and 3 are correct","only 1, 2, and 3 are correct","only 2 and 4 are correct","1, 2, 3 and 4 are correct"], a:0, ai:false},
+                {q:"The screening test for gestational diabetes mellitus recommended between 24th to 28th week of gestation requires 50g-75g of glucose dissolved in 200ml of water and slowly drunk. A blood sample is collected after:", o:["30 mins","60 mins","90 mins","120 mins"], a:1, ai:false},
+                {q:"High-risk pregnant patients should undergo immediate testing when they are defined as having which of the following? 1. marked obesity 2. Glycosuria 3. personal history of GDM 4. Strong family history of diabetes.", o:["only 1 and 3 are correct","only 1, 2, and 3 are correct","only 2 and 4 are correct","1, 2, 3 and 4 are correct"], a:3, ai:false},
+                {q:"Which of the following are not the criteria for the diagnosis of diabetes?", o:["Fasting blood glucose >126 mg/dL","2-hour postprandial glucose >140 mg/dL","HbA1C >6.5%","Random blood glucose >200 mg/dL with classical symptoms"], a:1, ai:false},
+                {q:"A 55 year old patients diagnosed as prediabetic. Which of the following statement accurately characterize prediabetes?", o:["Fasting blood glucose from 120-180 mg/dL","Fasting blood glucose from 126-140 mg/dL","Fasting blood glucose from 100-125 mg/dL","All of the above"], a:2, ai:false},
+                {q:"In the colorimetric estimation of blood glucose using the glucose oxidase reaction, what is the required volume of the serum or plasma sample?", o:["1 ml","100 microliter","10 microliter","50 microliter"], a:2, ai:true},
+                {q:"At which wavelength should the absorbance of the test and standard be recorded against the blank during the colorimetric estimation of blood glucose?", o:["340 nm","450 nm","510 nm","620 nm"], a:2, ai:true},
+                {q:"Before performing a blood glucose test, the patient should inform the doctor about their medications. Which of the following medications is known to affect blood glucose levels?", o:["Paracetamol","Penicillin","Vitamin C","Phenytoin"], a:3, ai:true},
+                {q:"A patient presents with anxiety, sweating, trembling, and confusion. According to the clinical signs, these symptoms are most characteristic of:", o:["Hyperglycemia","Hypoglycemia","Gestational diabetes","Renal glucosuria"], a:1, ai:true},
+                {q:"Hypoglycemia can occur in different age groups due to various reasons. Which of the following is considered a specific cause of infantile hypoglycemia?", o:["Insulinoma","Deficiency of aldolase B (fructose-induced hypoglycemia)","Chronic alcoholism","Overdose of oral hypoglycemic drugs"], a:1, ai:true},
+                {q:"In a patient with renal glucosuria, glucose appears in the urine even though the plasma glucose level is still below the normal renal threshold. What is this normal renal threshold for glucose?", o:["< 140 mg/dl","< 180 mg/dl","< 200 mg/dl","< 126 mg/dl"], a:1, ai:true},
+                {q:"Hyperglycemia can be caused by various endocrine and stress-related factors other than Diabetes Mellitus. Which of the following conditions is a recognized cause of hyperglycemia?", o:["High cortisol (e.g., Cushing syndrome)","Hypofunction of the suprarenal cortex","Deficient fatty acid oxidation (Carnitine deficiency)","Glycogen storage diseases in the liver"], a:0, ai:true}
+            ],
+            "HbA1C": [
+                {q:"In diabetic patient, this provides information about the average blood glucose concentration during the preceding 6-8 week:", o:["HbB","HbF","HbA1c","HbS"], a:2, ai:false},
+                {q:"HbA1C represents:", o:["Oral glucose tolerance test","Fructosamine test","plasma glucose concentration over pervious 8-10 Weeks","Fasting plasma glucose concentration"], a:2, ai:false},
+                {q:"Hemoglobin A1c represents:", o:["100% of HbA1","50% of HbA1","the major serum hemoglobin","the most common aberrant hemoglobin"], a:1, ai:false},
+                {q:"In diabetic patient, the need to reevaluate treatment regimen is necessary when the glycated hemoglobin is greater than:", o:["2%","4%","6%","8%"], a:3, ai:false},
+                {q:"Which of the following statements regarding glycohemoglobins are correct? 1. The degree of glycation depends essentially on the degree as well as the duration of the blood glucose elevation. 2. The nonglycated hemoglobin is Ao 3. The reference method for glycated hemoglobin analysis is liquid chromatographic 4. The mean blood glucose of the preceding 6-8 weeks is correlated with corresponding glycohemoglobin value.", o:["only 1 and 3 are correct","only 1, 2, and 3 are correct","only 2 and 4 are correct","1, 2, 3 and 4 are correct"], a:3, ai:false},
+                {q:"What principle is used in the latex-enhanced immunoassay method for measuring HbA1c?", o:["Binding of HbA1c to latex beads coated with specific antibodies","Separation based on charge differences","Reaction with cis-diol groups of glucose","Light scattering due to hemoglobin variants"], a:0, ai:false},
+                {q:"Which of the following HbA1c levels is typically considered 'not controlled' in diabetic patients?", o:["Less than 6.4%","6.5-8.4%","Greater than 8.5%","Exactly 6.5%"], a:2, ai:false},
+                {q:"Which of the following is NOT an advantage of using HbA1c to monitor long-term blood glucose control in diabetic patients?", o:["Reflects blood glucose levels over the past 2-3 months","Unaffected by recent food intake","Requires fasting before the test","Provides an average blood glucose level over time"], a:2, ai:false},
+                {q:"Which anticoagulant is preferred for HbA1c testing?", o:["Heparin","Citrate","EDTA","Sodium fluoride"], a:2, ai:false},
+                {q:"Which of the following is a method used to measure HbA1c levels?", o:["Cation-exchange chromatography","Ionization assay","Fluorescent microscopy","ELISA"], a:0, ai:false},
+                {q:"In patients with which of the following conditions might HbA1c results be inaccurately low?", o:["Iron deficiency anemia","Sickle cell disease","Hyperlipidemia","Hypertension"], a:1, ai:false},
+                {q:"Which of the following laboratory measurement best indicate the blood glucose control over a period of weeks to months?", o:["Measurement of blood glucose","Measurement of HbA1C","Measurement of urinary ketone bodies","Measurement of insulin"], a:1, ai:false},
+                {q:"During the non-enzymatic glycation process, glucose enters the red blood cell and reacts with which of the following to initially form a Schiff base?", o:["C-terminal lysine of the α-chain","N-terminal valine of the β-chain","N-terminal leucine of the α-chain","C-terminal valine of the β-chain"], a:1, ai:true},
+                {q:"According to the ADA guidelines, which of the following HbA1c ranges is indicative of prediabetes?", o:["< 5.7%","5.7 - 6.4%","6.5 - 7.0%","> 8.5%"], a:1, ai:true},
+                {q:"While conditions like hemolytic anemia can cause a falsely low HbA1c result, which of the following conditions is known to cause a falsely HIGH HbA1c reading?", o:["Splenectomy","Recent blood loss","Pregnancy","Chronic liver disease"], a:0, ai:true},
+                {q:"In affinity chromatography used for separating HbA1c, the immobilized m-aminophenyl boronic acid reacts with which specific functional groups of glucose?", o:["Amino groups","Carboxyl groups","Cis-diol groups","Ketoamine groups"], a:2, ai:true},
+                {q:"For an elderly diabetic patient with end-stage renal disease (ESRD) on hemodialysis who experiences frequent severe hypoglycemic episodes, what is the most appropriate target HbA1c to minimize the risk of hypoglycemia?", o:["< 6.0 - 6.5%","< 6.5 - 7.0%","< 7.0 - 7.5%","< 8.0 - 8.5%"], a:3, ai:true}
+            ],
+            "Hb test": [
+                {q:"The major adult hemoglobin, HbA, has the structure?", o:["Alpha 2 beta 2","Alpha 2 gamma 2","Alpha 2 delta 2","None of above"], a:0, ai:false},
+                {q:"In sickle cell anemia disorder, the hemoglobin produced is:", o:["HbA","HbC","HbF","HbS"], a:3, ai:false},
+                {q:"The anemia condition most commonly result from?", o:["Vitamin B-12 deficiency anemia","Sickle cell anemia","Iron-deficiency anemia","Leukemia"], a:2, ai:false},
+                {q:"In suspect Fe deficiency anemia, which lab investigations would you order?", o:["CBC (complete blood count)","Blood smear","Serum iron","Serum ferritin"], a:3, ai:false},
+                {q:"What are heme containing compounds (hemoproteins)?", o:["Hemoglobin, myoglobin, respiratory cytochromes, cytochrome p450, catalase, peroxidase, and tryptophan oxygenase.","Albumin, Globulin, and Fibrinogen.","Cholesterol, Triglycerides, and Bile acids.","Glucose, Fructose, and Galactose."], a:0, ai:false},
+                {q:"What are iron containing proteins?", o:["Trypsin, Pepsin, and Amylase.","Insulin, Glucagon, and Epinephrine.","Hemoglobin, myoglobin, respiratory cytochromes and cytochrome p450.","Lipase, LCAT, and Creatine Kinase."], a:2, ai:false},
+                {q:"What are the functions of hemoglobin and myoglobin?", o:["Both synthesize proteins in the liver.","Hemoglobin carries oxygen from lungs to tissues and myoglobin stores oxygen in muscles.","Both break down glucose for energy.","Both act as hormones regulating calcium levels."], a:1, ai:false},
+                {q:"What are the structural features of hemoglobin A molecule?", o:["It has one subunit and contains one iron atom.","It has two subunits and contains no iron atoms.","It has six subunits and contains two iron atoms.","Hb A has four subunits, two α and two β units. It contains 4 iron atoms."], a:3, ai:false},
+                {q:"How many molecules of oxygen can bind with hemoglobin?", o:["One","Two","Three","Four"], a:3, ai:false},
+                {q:"What are the structural features of myoglobin molecule?", o:["It has one subunit, and contains one iron atom.","It has four subunits and four iron atoms.","It has two subunits and two iron atoms.","It is a completely lipid-based structure with no iron."], a:0, ai:false},
+                {q:"How many molecules of oxygen can bind with myoglobin?", o:["One","Two","Three","Four"], a:0, ai:false},
+                {q:"100 ml of blood can carry how much oxygen?", o:["5 ml","20 ml","50 ml","100 ml"], a:1, ai:false},
+                {q:"What is Bohr effect?", o:["It is the decrease of iron absorption in the intestine.","It is the influence of pH and pCO2 to facilitate oxygenation of Hb in the lungs and deoxynation at the tissues.","It is the synthesis of hemoglobin in the bone marrow.","It is the breakdown of red blood cells in the spleen."], a:1, ai:false},
+                {q:"What is cooperative binding of O2?", o:["Binding of one oxygen molecule at one heme, increases the oxygen affinity of the remaining heme groups in the same hemoglobin molecule.","It decreases the overall oxygen affinity of hemoglobin.","It completely prevents the binding of carbon dioxide.","It is the process by which myoglobin transfers oxygen to hemoglobin."], a:0, ai:false},
+                {q:"Which will decrease the affinity of hemoglobin for oxygen?", o:["Lower temperatures","Decreased pCO2","Increased pH","Increased 2,3 Bisphosphoglycerate (2,3-BPG) level"], a:3, ai:false},
+                {q:"According to the reference values, what is the normal hemoglobin concentration range for adult females?", o:["16-23 g/dL","12.5-16.5 g/dL","10-14 g/dL","13.5-17.5 g/dL"], a:1, ai:true},
+                {q:"What is the expected normal hemoglobin level at birth?", o:["10-14 g/dL","12-16 g/dL","13-17 g/dL","16-23 g/dL"], a:3, ai:true},
+                {q:"Which of the following conditions is a recognized cause of secondary polycythemia (an above-normal hemoglobin level)?", o:["Excessive bleeding","Malignant variation in blood cell production in the bone marrow","Living at high altitudes","Iron deficiency"], a:2, ai:true},
+                {q:"A below-normal hemoglobin level indicating anemia can be the result of all the following EXCEPT:", o:["Excessive destruction of red blood cells","Heavy smoking","Kidney disease","Bone marrow failure"], a:1, ai:true},
+                {q:"In a clinical assessment, what is the generally expected relationship between a healthy individual's hemoglobin level and their hematocrit level?", o:["The hemoglobin level should be equal to the hematocrit level","The hemoglobin level should be 1/2 of the hematocrit level","The hemoglobin level should be 1/3 of the hematocrit level","The hemoglobin level should be 2/3 of the hematocrit level"], a:2, ai:true},
+                {q:"Sickle cell hemoglobin (HbS) is a hemoglobinopathy characterized by which specific amino acid substitution?", o:["Glutamic acid for Valine at the 6th position in the alpha chain","Valine for Glutamic acid at the 6th position in the beta chain","Lysine for Glutamic acid at the 6th position in the beta chain","Valine for Glutamic acid at the 6th position in the alpha chain"], a:1, ai:true},
+                {q:"Under what specific condition does HbS precipitate into crystals, causing the red blood cells to change shape and become sickle-shaped?", o:["In high oxygen tension","When exposed to alkaline pH","In low oxygen tension (when HbS is reduced)","During high carbon dioxide tension"], a:2, ai:true},
+                {q:"The pathological condition known as beta-thalassemia major is characterized by:", o:["A single amino acid substitution of Valine for Glutamic acid","Defective synthesis of the alpha-globin chain","Increased levels of fetal hemoglobin (HbF) due to defective beta-globin chain synthesis","Abnormal synthesis of the heme porphyrin ring"], a:2, ai:true}
+            ],
+            "Total Protein": [
+                {q:"Serum differs from blood as it lacks:", o:["antibodies","clotting factors","albumins","globulins"], a:1, ai:false},
+                {q:"The high albumin level and decreased globuline is important clinically in detecting:", o:["Liver disease","Cardiac disease","Nervous disease","Lung disease"], a:0, ai:false},
+                {q:"All the following about plasma albumin is true except:", o:["It makes the greatest contribution to the plasma osmotic pressure.","It is minimally filtered at the renal glomeruli.","It behaves as an anion at the blood pH.","It is involved in the production of immunity."], a:3, ai:false},
+                {q:"All the following are functions of the plasma proteins except:", o:["Control of the plasma volume.","Control of erythropoiesis.","Transport of hormones.","Carriage of carbon dioxide."], a:1, ai:false},
+                {q:"The normal reference range for total Plasma proteins are:", o:["2.5-4.5 gm/dl","6-8 gm/dl","6.0-7.3 gm/dl",">8.3 gm/dl"], a:1, ai:false},
+                {q:"Hyperproteinemia can be caused by:", o:["malnutrition","liver disease","dehydration","severe burns"], a:2, ai:false},
+                {q:"Proteins are polymeric compounds joined together by:", o:["peptide bonds","ionic bonds","covalent bonds","hydrogen bonds"], a:0, ai:false},
+                {q:"The major types of plasma proteins are:", o:["globulins and fibrinogen","albumin and hemoglobin","albumin, globulins and fibrinogen","none of the above"], a:2, ai:false},
+                {q:"Albumin plays a key role in maintaining which of the following?", o:["Blood glucose levels","Oncotic pressure","Body temperature","Blood urea levels"], a:1, ai:false},
+                {q:"The albumin-BCG complex absorbs light maximally at what wavelength?", o:["420 nm","520 nm","628 nm","600 nm"], a:2, ai:false},
+                {q:"Most plasma proteins are synthesized in the liver. Which of the following proteins is an exception and is synthesized in plasma cells?", o:["Albumin","Fibrinogen","γ-globulins","Prealbumin"], a:2, ai:true},
+                {q:"Almost all plasma proteins are chemically classified as glycoproteins, with the exception of:", o:["Transferrin","Immunoglobulins","α_1-Antitrypsin","Albumin"], a:3, ai:true},
+                {q:"In the Biuret method for total protein determination, which of the following ions reacts with peptide bonds in an alkaline solution to form a colored complex?", o:["Fe²⁺","Cu²⁺","Zn²⁺","Mg²⁺"], a:1, ai:true},
+                {q:"The Biuret reaction produces a specific colored complex that is measured spectrophotometrically. What is the color of this complex and its optimal measuring wavelength?", o:["Violet color measured at 540 nm","Blue color measured at 628 nm","Red color measured at 415 nm","Yellow color measured at 450 nm"], a:0, ai:true},
+                {q:"Physiological variability can influence the concentration of plasma proteins. Which of the following factors is known to cause a physiological INCREASE in total protein concentration?", o:["Starvation","Stand-up position","Pregnancy","Childhood"], a:1, ai:true},
+                {q:"Which of the following conditions is considered a clinical cause of hypoproteinemia (decreased total protein levels)?", o:["Multiple myeloma","Severe burns","Hyperthyroidism","Dehydration"], a:1, ai:true}
+            ],
+            "Urea": [
+                {q:"Non-protein nitrogenous substances in blood are raised in:", o:["Starvation","Liver damage","Renal failure","All of these"], a:2, ai:false},
+                {q:"Urea is synthesized from:", o:["the catabolism of amino acids","the catabolism of free fatty acids","the catabolism of carbohydrates","the catabolism of ketone bodies"], a:0, ai:false},
+                {q:"Blood urea level is not specific indicator for renal dysfunction, because:", o:["Its level is affected by dietary protein","liver disease may raise its level","blood pressure may elevate its level","All of the above"], a:0, ai:false},
+                {q:"Low Serum urea in late pregnancy is due to:", o:["blockage of the urinary tract","severe liver damage","water retention","very low protein diet"], a:2, ai:false},
+                {q:"What is the normal reference range for Blood Urea Nitrogen (BUN)?", o:["15 to 40 mg/dL","7 to 20 mg/dL","6 to 8 g/dL","12 to 20 mg/dL"], a:1, ai:true},
+                {q:"In the clinical laboratory, serum urea concentration can be calculated from the Blood Urea Nitrogen (BUN) value. Which of the following formulas is correct?", o:["Urea = BUN × 2.14","Urea = BUN ÷ 2.14","Urea = BUN × 1.14","Urea = BUN ÷ 1.14"], a:0, ai:true},
+                {q:"How does the human kidney primarily handle urea?", o:["Freely filtered by glomeruli with active tubular reabsorption","Freely filtered by glomeruli with tubular secretion","Freely filtered by glomeruli with passive diffusion depending on urine flow rate","Not filtered by glomeruli, only secreted by the tubules"], a:2, ai:true},
+                {q:"In the enzymatic method for urea estimation, the enzyme urease acts on urea and water to produce:", o:["Amino acids and Carbon dioxide","Ammonia and Carbon dioxide","Ammonium and Oxygen","Nitrogen and Carbon monoxide"], a:1, ai:true},
+                {q:"A patient presents with severe dehydration due to excessive vomiting and diarrhea. Which of the following laboratory findings would most likely be expected?", o:["Low BUN with normal serum creatinine","Elevated BUN with elevated serum creatinine and a decreased BUN:Creatinine ratio","Elevated BUN with normal serum creatinine and an increased BUN:Creatinine ratio","Normal BUN with elevated serum creatinine"], a:2, ai:true},
+                {q:"Which of the following conditions is considered a post-renal cause of elevated serum urea (azotemia)?", o:["Acute Glomerulonephritis","Dehydration","Congestive heart failure","Benign enlargement of the prostate"], a:3, ai:true},
+                {q:"Which of the following factors can cause a physiological decrease in Blood Urea Nitrogen (BUN) levels?", o:["High protein diet","Older age with the inability to concentrate urine","A combination of a low-protein and high-carbohydrate diet","Severe gastrointestinal hemorrhage"], a:2, ai:true},
+                {q:"In the measurement of urea using the Berthelot reaction, ammonia reacts with phenol and hypochlorite to produce a specific colored compound. What is the color of this compound and at which wavelength is it optimally measured?", o:["Brown compound measured at 450 nm","Blue compound (Indophenol) measured at 540 nm","Red compound measured at 510 nm","Violet compound measured at 540 nm"], a:1, ai:true},
+                {q:"A 55-year-old diabetic patient has a BUN of 75 mg/dL and a serum creatinine of 6.0 mg/dL. The BUN/Creatinine ratio is approximately 12:1. These findings are most indicative of:", o:["Pre-renal failure","Renal cause (e.g., acute kidney injury)","Post-renal obstruction","Advanced liver cirrhosis"], a:1, ai:true}
+            ],
+            "Creatinine": [
+                {q:"Creatinine clearance is decreased in:", o:["Glomerulonephritis","Urinary obstruction","Hypertension","Starvation"], a:0, ai:false},
+                {q:"A patient's blood urea is 30 mg/dl and his creatinine is 5.0 mg/dl. What conclusion would you draw from these results, Patient?", o:["is normal","is in early stage of renal failure","has suffered muscle deterioration","One of the values is in error"], a:3, ai:false},
+                {q:"Which of the following groups of amino acids is required for the biosynthesis of creatine?", o:["Arginine, Leucine, Valine","Alanine, Glycine, Serine","Arginine, Glycine, Methionine","Methionine, Cysteine, Tyrosine"], a:2, ai:true},
+                {q:"The biosynthesis of creatine occurs primarily in two steps involving which of the following organs?", o:["Liver and Pancreas","Kidneys and Liver","Skeletal muscle and Heart","Brain and Kidneys"], a:1, ai:true},
+                {q:"Approximately what percentage of muscle creatine is spontaneously converted to creatinine on a daily basis?", o:["1-2%","5-10%","15-20%","98%"], a:0, ai:true},
+                {q:"Creatinine is produced and excreted at a constant rate that is directly proportional to the body's:", o:["Dietary protein intake","Body fat percentage","Muscle mass","Daily water consumption"], a:2, ai:true},
+                {q:"In the Jaffe reaction for measuring creatinine, what is the working reagent used to form an orange-red complex?", o:["Acetic acid in alkaline solution","Picric acid in alkaline solution","Sulfuric acid in acidic solution","Ninhydrin in neutral solution"], a:1, ai:true},
+                {q:"Which of the following is considered a non-renal factor that can cause an increase in serum creatinine levels?", o:["Pregnancy","Severe malnutrition","Acromegaly","Advanced liver disease"], a:2, ai:true},
+                {q:"The formula for calculating the Glomerular Filtration Rate (GFR) typically takes into account the serum creatinine level along with other factors such as:", o:["Age, race, and sex","Height, weight, and blood pressure","Liver enzymes and fasting blood sugar","Urine output volume only"], a:0, ai:true},
+                {q:"In the clearance formula C = (U x V) / P, what does \"V\" represent?", o:["Velocity of blood flow","Volume of plasma cleared per minute","Volume of urine in ml excreted per minute","Venous pressure"], a:2, ai:true},
+                {q:"A 78-year-old bedridden female with advanced Rheumatoid Arthritis shows a serum creatinine level of 0.3 mg/dL. This decreased level is most likely attributed to:", o:["Impaired renal function","Severe muscle wasting","Obstruction of the urinary tract","High intake of red meat"], a:1, ai:true}
+            ],
+            "Bilirubin": [
+                {q:"In obstructive jaundice, urinary Bilirubin is:", o:["Absent","Increased","Present","Present in small amount"], a:1, ai:false},
+                {q:"A positive urine for bilirubin can be caused by the presence of:", o:["unconjugated bilirubin","conjugated bilirubin","delta bilirubin","urobilinogen"], a:1, ai:false},
+                {q:"A diagnosis of hemolytic anemia in adult would be confirmed by the following findings:", o:["urobilinogen excretion increased","Increased plasma ALP","Increased plasma ALT","Increased plasma haptoglobin"], a:0, ai:false},
+                {q:"Total serum bilirubin levels are:", o:["Markedly increased in chronic hemolytic disease (above 10 mg/dl)","Markedly elevated in hepatocellular disease (10-40 mg/dl)","Mildly increased in cholestasis (below 5 mg/dl)","B and C"], a:1, ai:false},
+                {q:"An 6 years old child presents with total bilirubin levels of 2.4 mg/dl, urinary Urobilinogen levels are increased and bilirubin is absent in urine. The most likely diagnosis is:", o:["Hepatitis","Hemolytic Jaundice","Obstructive jaundice","Dubin Johnson's syndrome"], a:1, ai:false},
+                {q:"A 25 year male presents with elevated bilirubin levels. Examination of urine shows presence of bilirubin while urobilinogen is absent. likely diagnosis is:", o:["Hepatitis","Hemolytic Jaundice","Obstructive jaundice","Gilbert's syndrome"], a:2, ai:false},
+                {q:"A 24-year-old man presents to the emergency department complaining of yellowing of his eyes and dark urine for 3 days. He denies abdominal pain, nausea, or vomiting. His medical history is unremarkable, but he mentions a recent episode of flu-like illness about a week ago. On physical examination, he appears jaundiced but otherwise healthy. No hepatosplenomegaly is noted. Laboratory results show: Total bilirubin: 4.8 mg/dl, Direct (conjugated) bilirubin: 0.5 mg/dL, AST, ALT, ALP: Normal. What is the most likely diagnosis?", o:["Hemolytic anemia","Gilbert's syndrome","Hepatitis A infection","Obstructive jaundice"], a:1, ai:false},
+                {q:"Which condition is most likely associated with raised levels of unconjugated bilirubin only and normal liver enzymes?", o:["Cholecystitis","Hepatitis","Gilbert's Syndrome","Cirrhosis"], a:2, ai:false},
+                {q:"In post-hepatic jaundice (e.g., cholecystitis), which of the following is typically observed?", o:["High unconjugated bilirubin","High conjugated bilirubin","Low total bilirubin","Decreased liver enzymes"], a:1, ai:false},
+                {q:"During bilirubin metabolism in the reticuloendothelial system, heme is first converted to biliverdin by which of the following enzymes?", o:["Biliverdin reductase","Heme oxygenase","UDP-glucuronyl transferase","Alanine aminotransferase"], a:1, ai:true},
+                {q:"Unconjugated bilirubin is converted to conjugated bilirubin in the liver by the action of:", o:["Heme oxygenase","UDP-glucuronyl transferase","Biliverdin reductase","Intestinal bacteria"], a:1, ai:true},
+                {q:"In the Colorimetric Diazo method for determining total bilirubin, what substance is added to the reaction with diazotized sulphanilic acid to ensure both conjugated and unconjugated forms react to produce the diazo dye?", o:["Acetic acid","Caffeine","Hydrogen peroxide","Alkaline picrate"], a:1, ai:true},
+                {q:"According to standard laboratory reference ranges, what is the normal expected level for Direct Bilirubin in the serum?", o:["0.2 - 1.2 mg/dL","0.2 - 0.8 mg/dL","0 - 0.3 mg/dL","1.0 - 2.5 mg/dL"], a:2, ai:true},
+                {q:"A severe complication of high unconjugated bilirubin in newborns is bilirubin encephalopathy. This occurs because unconjugated bilirubin:", o:["Obstructs the biliary tree","Causes severe hemolytic anemia","Crosses the blood-brain barrier and is highly toxic to neurons","Decreases the production of albumin"], a:2, ai:true},
+                {q:"Which of the following clinical signs is indicative of bilirubin encephalopathy in a neonate?", o:["Hyperactive reflexes and constant smiling","Rigid extension of all limbs and lethargy","Increased appetite and rapid weight gain","Pale, clay-colored stools"], a:1, ai:true},
+                {q:"For a term newborn, phototherapy under a fluorescent light is generally scheduled when the total serum bilirubin level reaches what concentration at 24 hours of age?", o:["2 to 4 mg/dL","5 to 7 mg/dL","10 to 12 mg/dL","Over 20 mg/dL"], a:2, ai:true},
+                {q:"In severe cases of hyperbilirubinemia, a blood exchange transfusion may be required. The primary goals of this procedure include all of the following EXCEPT:", o:["Decreasing serum bilirubin levels to prevent brain damage","Removing sensitized red blood cells","Correcting anemia and preventing cardiac failure","Enhancing the native function of the UDP-glucuronyl transferase enzyme"], a:3, ai:true}
+            ],
+            "Liver Enzymes": [
+                {q:"High ALP with low aminotransferase activity was observed in:", o:["cholestasis","hepatitis","hemolytic anemia","alcoholism"], a:0, ai:false},
+                {q:"Elevated levels of AST may indicate:", o:["congestion of the bile ducts","Cholestasis","Viral and chronic hepatitis","Alcoholic hepatitis"], a:3, ai:false},
+                {q:"SGPT is found in the (exclusively):", o:["peroxisome","lysosome","cytoplasm","mitochondria"], a:2, ai:false},
+                {q:"After severe liver damage, ALT levels rise more than ....... times greater than normal.", o:["50","30","10 to 20","20"], a:0, ai:false},
+                {q:"In the enzymatic reaction catalyzed by Alanine transaminase (ALT), the alpha-amino group is reversibly transferred between alanine and which of the following alpha-keto acids?", o:["Oxaloacetate","Alpha-ketoglutarate","Pyruvate","L-Glutamate"], a:1, ai:true},
+                {q:"Aspartate transaminase (AST) catalyzes the transfer of an alpha-amino group to form L-Glutamate and which of the following products?", o:["Pyruvate","Oxaloacetate","Alpha-ketoglutarate","Malate"], a:1, ai:true},
+                {q:"While ALT is predominantly found exclusively in the cytoplasm of hepatocytes, AST is found in the cytoplasm and which other cellular organelle?", o:["Lysosomes","Golgi apparatus","Mitochondria","Endoplasmic reticulum"], a:2, ai:true},
+                {q:"Which of the following statements correctly differentiates the tissue distribution of AST and ALT?", o:["ALT is found in the heart, muscle, and kidneys, while AST is exclusively in the liver.","AST is found in the liver, heart, muscle, kidney, and RBCs, while ALT is predominantly in the liver.","Both enzymes are equally distributed across all bodily tissues.","AST is strictly found in the liver, while ALT is widely distributed in muscles and RBCs."], a:1, ai:true},
+                {q:"In cases of acute hepatitis, which of the following enzyme patterns is typically observed?", o:["AST levels are significantly higher than ALT levels.","Very high levels of ALT (more than 10 times the normal level) with ALT > AST.","Mild elevation of both AST and ALT with prominent ALP increase.","Normal ALT with very high AST levels."], a:1, ai:true},
+                {q:"A moderate increase in ALT is most likely associated with which of the following conditions rather than an acute viral infection?", o:["Acute hepatitis","Liver cancer, cirrhosis, and obstruction of bile ducts","Severe burns","Acute heart failure"], a:1, ai:true},
+                {q:"Elevated levels of AST (where AST > ALT) are highly indicative of which of the following conditions?", o:["Viral hepatitis","Congestion of the bile ducts","Alcoholic hepatitis and acute heart failure","Cholestasis"], a:2, ai:true},
+                {q:"What is the normal physiological reference range for serum Alanine transaminase (ALT)?", o:["40 - 125 U/L","5 - 40 U/L","10 - 30 U/L","5 - 35 U/L"], a:3, ai:true},
+                {q:"Alkaline phosphatase (ALP) is particularly concentrated in specific tissues. Which of the following combinations represents tissues with the highest ALP concentrations?", o:["Brain, heart, and skeletal muscle","Liver, bone, bile duct, kidney, and placenta","Lungs, spleen, and pancreas","Stomach, intestines, and skin"], a:1, ai:true},
+                {q:"To determine the exact tissue source of an elevated total ALP in the blood, the detection of isoenzymes is utilized. Which isoenzyme is mainly produced in the liver?", o:["ALP-I","ALP-II","ALP-III","ALP-IV"], a:0, ai:true},
+                {q:"Serum Alkaline Phosphatase (ALP) can increase physiologically under normal, non-pathological conditions in which of the following groups?", o:["Elderly males","Pregnant women and children (during bone healing)","Individuals on a high-protein diet","Patients with chronic alcoholism"], a:1, ai:true},
+                {q:"In the routine laboratory assay for GPT (ALT) and GOT (AST), which chemical reagent is used to convert oxaloacetate and pyruvate into a derivative that can be measured spectrophotometrically?", o:["Picric acid","2,4-dinitrophenylhydrazine","Sulfanilic acid","Ninhydrin"], a:1, ai:true},
+                {q:"In the coupled enzymatic reaction for transaminase assays, the intensely colored 2,4-dinitrophenylhydrazine derivatives are measured at which wavelength using a spectrophotometer?", o:["490 nm","510 nm","546 nm","600 nm"], a:2, ai:true},
+                {q:"The enzyme gamma-glutamyltransferase (GGT) catalyzes the transfer of amino acids across membranes and is primarily involved in the metabolism of which important antioxidant?", o:["Ascorbic acid","Glutathione","Uric acid","Bilirubin"], a:1, ai:true},
+                {q:"A patient presents with elevated plasma ALP levels. To differentiate whether the source of the ALP elevation is due to liver disease or bone disease, which of the following tests is most highly sensitive and specific?", o:["AST","ALT","GGT","Total Bilirubin"], a:2, ai:true},
+                {q:"GGT is particularly useful in clinical diagnostics because its levels are consistently NOT increased in which of the following conditions despite an elevated ALP?", o:["Bone disease","Biliary obstruction","Chronic alcohol ingestion","Hepatocellular dysfunction"], a:0, ai:true},
+                {q:"Chronic alcohol ingestion can frequently be detected by an elevation of which liver enzyme, which rises in about 75% of patients who chronically drink?", o:["ALP","AST","ALT","GGT"], a:3, ai:true},
+                {q:"In severe liver diseases such as biliary obstruction (cholestasis), the elevation of which enzyme strongly parallels the elevation of ALP?", o:["ALT","AST","SGOT","GGT"], a:3, ai:true},
+                {q:"According to the laboratory procedures for measuring GPT (ALT), after incubating the serum with the substrate for exactly 30 minutes, what is added immediately before allowing the tubes to stand for 20 minutes at room temperature?", o:["0.4 M NaOH","Distilled water","2,4-dinitrophenylhydrazine","Alkaline picrate"], a:2, ai:true},
+                {q:"A 60-year-old woman presents with severe itching, dark urine, pale stools, and progressive jaundice. Her lab results show ALT = 95 U/L, AST = 88 U/L, ALP = 620 U/L, and GGT = 500 U/L. This enzymatic pattern is most consistent with:", o:["Acute viral hepatitis","Alcoholic liver disease","Hemolytic anemia","Obstructive liver injury (cholestasis)"], a:3, ai:true}
+            ]
+        };
+
+        // ---------- الحالة العامة ----------
+        let state = {
+            currentLecture: null,
+            questions: [],
+            answers: {},
+            score: 0,
+            isMixed: false,
+            aiUnlocked: false
+        };
+
+        // المؤثرات الصوتية والمرئية
+        const correctEmojis = ['❤️‍🔥', '🌟', '🔥', '💯', '❤️', '💪'];
+        const wrongEmojis = ['😑', '🤦', '❌', '💔', '💤'];
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            if (type === 'correct') {
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else {
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            }
+        }
+
+        function showEmoji(correct) {
+            const container = document.getElementById('emoji-container');
+            const el = document.createElement('div');
+            el.className = 'float-emoji';
+            const arr = correct ? correctEmojis : wrongEmojis;
+            el.textContent = arr[Math.floor(Math.random() * arr.length)];
+            el.style.left = Math.random() * 80 + 10 + '%';
+            el.style.top = Math.random() * 40 + 40 + '%';
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 1800);
+        }
+
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function initHome() {
+            const grid = document.getElementById('lecture-grid');
+            grid.innerHTML = '';
+            Object.keys(rawData).forEach(l => {
+                const btn = document.createElement('div');
+                btn.className = 'card-btn glass';
+                btn.innerHTML = `<span>${l}</span><span class="q-count">(${rawData[l].length})</span>`;
+                btn.onclick = () => startQuiz(l);
+                grid.appendChild(btn);
+            });
+            const mixBtn = document.createElement('div');
+            mixBtn.className = 'card-btn glass mixed';
+            mixBtn.textContent = '🎲 Mixed';
+            mixBtn.onclick = () => startQuiz('Mixed', true);
+            grid.appendChild(mixBtn);
+        }
+
+        function startQuiz(lectureName, isMixed = false) {
+            state.currentLecture = lectureName;
+            state.isMixed = isMixed;
+            state.score = 0;
+            state.answers = {};
+            state.aiUnlocked = false;
+
+            if (isMixed) {
+                let all = [];
+                Object.values(rawData).forEach(arr => all = all.concat(arr));
+                state.questions = shuffle(all).map((q, i) => ({...q, id: i+1}));
+            } else {
+                state.questions = rawData[lectureName].map((q, i) => ({...q, id: i+1}));
+            }
+            renderQuiz();
+            saveProgress();
+        }
+
+        function renderQuiz() {
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+
+            document.getElementById('quiz-view').classList.remove('hidden');
+            document.getElementById('home-view').classList.add('hidden');
+            document.getElementById('quiz-title').textContent = state.isMixed ? '🎲 Mixed Questions' : state.currentLecture;
+            updateScore();
+
+            const showAI = state.isMixed || state.currentLecture === 'Liver Enzymes' || state.aiUnlocked;
+
+            state.questions.forEach((q, idx) => {
+                const isAI = q.ai;
+                const shouldHide = isAI && !showAI;
+                const card = document.createElement('div');
+                card.className = `q-card glass ${shouldHide ? 'ai-hidden' : ''} ${isAI ? 'ai-card' : ''}`;
+                card.innerHTML = `
+                    <div class="q-num">📌 Question ${q.id}</div>
+                    <div class="q-text" dir="ltr" style="direction:ltr;text-align:left">${q.q}</div>
+                    <div class="options" id="opts-${idx}" dir="ltr" style="direction:ltr">
+                        ${q.o.map((opt, optIdx) => `<div class="opt" dir="ltr" style="direction:ltr;text-align:left" onclick="handleOption(${idx}, ${optIdx})">${opt}</div>`).join('')}
+                    </div>
+                `;
+                container.appendChild(card);
+                if (state.answers[idx] !== undefined) {
+                    lockQuestion(idx, state.answers[idx], q.a, false);
+                }
+            });
+
+            if (!state.isMixed && state.currentLecture !== 'Liver Enzymes' && !state.aiUnlocked) {
+                const divider = document.createElement('div');
+                divider.className = 'ai-divider glass';
+                divider.id = 'ai-transition-divider';
+                divider.innerHTML = `
+                    <h3>🎉 End of previous years questions</h3>
+                    <p>Continue with AI-powered questions?</p>
+                    <button onclick="unlockAI()">✅ Yes, continue</button>
+                `;
+                container.appendChild(divider);
+            }
+        }
+
+        function unlockAI() {
+            state.aiUnlocked = true;
+            saveProgress();
+            const divider = document.getElementById('ai-transition-divider');
+            if (divider) divider.style.display = 'none';
+            document.querySelectorAll('.ai-card.ai-hidden').forEach((card, i) => {
+                card.classList.remove('ai-hidden');
+                card.classList.add('reveal-anim');
+                if (i === 0) setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+            });
+        }
+
+        function handleOption(qIdx, selectedIdx) {
+            if (state.answers[qIdx] !== undefined) return;
+            const correct = state.questions[qIdx].a;
+            state.answers[qIdx] = selectedIdx;
+            if (selectedIdx === correct) {
+                state.score++;
+                playSound('correct');
+                showEmoji(true);
+            } else {
+                playSound('wrong');
+                showEmoji(false);
+            }
+            updateScore();
+            lockQuestion(qIdx, selectedIdx, correct, true);
+            saveProgress();
+        }
+
+        function lockQuestion(qIdx, selected, correct, animate) {
+            const opts = document.querySelectorAll(`#opts-${qIdx} .opt`);
+            opts.forEach(o => o.classList.add('locked'));
+            opts[selected].classList.add(selected === correct ? 'selected-correct' : 'selected-wrong');
+            if (selected !== correct) opts[correct].classList.add('show-correct');
+        }
+
+        function updateScore() {
+            document.getElementById('score-val').textContent = state.score;
+            document.getElementById('total-val').textContent = state.questions.length;
+        }
+
+        function goHome() {
+            document.getElementById('quiz-view').classList.add('hidden');
+            document.getElementById('home-view').classList.remove('hidden');
+            localStorage.removeItem('chemQuizState');
+            state = { currentLecture: null, questions: [], answers: {}, score: 0, isMixed: false, aiUnlocked: false };
+        }
+
+        function saveProgress() {
+            if (!state.currentLecture) return;
+            const data = {
+                lecture: state.currentLecture,
+                isMixed: state.isMixed,
+                answers: state.answers,
+                score: state.score,
+                aiUnlocked: state.aiUnlocked,
+                questions: state.questions
+            };
+            localStorage.setItem('chemQuizState', JSON.stringify(data));
+        }
+
+        function loadSavedProgress() {
+            const data = JSON.parse(localStorage.getItem('chemQuizState'));
+            if (!data) return;
+            state = {
+                currentLecture: data.lecture,
+                isMixed: data.isMixed,
+                answers: data.answers || {},
+                score: data.score || 0,
+                aiUnlocked: data.aiUnlocked || false,
+                questions: data.questions || []
+            };
+            document.getElementById('modal-overlay').classList.add('hidden');
+            renderQuiz();
+        }
+
+        function restartApp() {
+            localStorage.removeItem('chemQuizState');
+            document.getElementById('modal-overlay').classList.add('hidden');
+            state = { currentLecture: null, questions: [], answers: {}, score: 0, isMixed: false, aiUnlocked: false };
+            goHome();
+        }
+
+        // --- جسيمات الخلفية ---
+        const canvas = document.getElementById('particles-canvas');
+        const ctxP = canvas.getContext('2d');
+        let particles = [];
+        let animFrame;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = (Math.random() - 0.5) * 0.4;
+                this.speedY = (Math.random() - 0.5) * 0.4;
+                this.opacity = Math.random() * 0.4 + 0.2;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x > canvas.width) this.x = 0;
+                else if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                else if (this.y < 0) this.y = canvas.height;
+            }
+            draw() {
+                ctxP.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctxP.beginPath();
+                ctxP.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctxP.fill();
+            }
+        }
+
+        function initParticles() {
+            resizeCanvas();
+            particles = [];
+            const count = window.innerWidth < 768 ? 35 : 70;
+            for (let i = 0; i < count; i++) particles.push(new Particle());
+        }
+
+        function animateParticles() {
+            ctxP.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            animFrame = requestAnimationFrame(animateParticles);
+        }
+
+        window.addEventListener('resize', () => {
+            cancelAnimationFrame(animFrame);
+            initParticles();
+            animateParticles();
+        });
+
+        window.onload = () => {
+            initHome();
+            initParticles();
+            animateParticles();
+            if (localStorage.getItem('chemQuizState')) {
+                document.getElementById('modal-overlay').classList.remove('hidden');
+            }
+        };
+    </script>
+</body>
+</html>
